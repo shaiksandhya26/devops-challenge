@@ -1,3 +1,3 @@
-#### Pip3line Architecture for Infra setup
+#### Pipeline Architecture for Infra setup
 
-![alt text](docs/images/image.png)
+<img src="docs\images\Infra-automation.PNG">
