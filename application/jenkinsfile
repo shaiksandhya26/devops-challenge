@@ -1,5 +1,3 @@
------ Jenkins File for Terraform ------
-
 pipeline {
     agent any
     

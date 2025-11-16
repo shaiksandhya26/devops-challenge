@@ -1,0 +1,23 @@
+The following tools/plugins are installed inside Jenkins to support the pipeline:
+
+Core Tools
+
+#### AWS CLI – required for authenticating and interacting with AWS services.
+
+kubectl – required for deploying and managing workloads on Kubernetes / EKS.
+
+Docker CLI – used for building and pushing Docker images.
+
+#### Jenkins Plugins (installed manually or required)
+
+Git Plugin
+
+Pipeline Plugin
+
+Credentials Binding Plugin
+
+CloudBees AWS Credentials Plugin
+
+Kubernetes CLI Plugin (optional)
+
+Pipeline Utility Steps

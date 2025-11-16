@@ -1,0 +1,14 @@
+---
+# ConfigMap for MongoDB Express configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-express-config
+  labels:
+    app: mongo-express
+data:
+  ME_CONFIG_MONGODB_SERVER: "mongodb-service"
+  ME_CONFIG_BASICAUTH_USERNAME: "admin"
+  ME_CONFIG_SITE_BASEURL: "/mongo-express"
+  ME_CONFIG_SITE_COOKIESECRET: "default-cookie-secret"
+  ME_CONFIG_SITE_SESSIONSECRET: "default-session-secret"
