@@ -1,0 +1,191 @@
+pipeline {
+    agent any
+    
+    environment {
+        AWS_REGION = 'ap-south-1'
+    }
+    
+    stages {
+
+        stage('Install Tools') {
+            steps {
+                script {
+                    echo 'Installing required tools...'
+                    // Install Terraform
+                    sh '''
+                        curl -LO https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+                        unzip -q terraform_1.5.0_linux_amd64.zip
+                        chmod +x terraform
+                        mv terraform /usr/local/bin/
+                    '''
+                    // Install TFSec
+                    sh '''
+                        curl -L -o tfsec https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+                        chmod +x tfsec
+                        mv tfsec /usr/local/bin/
+                    '''
+                    // Verify installations
+                    sh '''
+                        terraform version
+                        tfsec --version
+                    '''
+                }
+            }
+        }
+        
+        stage('Checkout Code') {
+            steps {
+                script {
+                    echo 'Checking out source code...'
+                    sh '''
+                        if [ ! -d "devops-challenge" ]; then
+                            git clone -b develop https://github.com/shaiksandhya26/devops-challenge.git
+                        else
+                            cd devops-challenge && git pull origin develop
+                        fi
+                    '''
+                }
+            }
+        }
+        
+        stage('Configure AWS Credentials') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'awscredentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    script {
+                        echo 'Configuring AWS credentials...'
+                        sh '''
+                            echo "AWS Access Key ID configured successfully"
+                            echo "AWS Region: ${AWS_REGION}"
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Security Scan - TFSec') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'awscredentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    dir('devops-challenge/terraform') {
+                        script {
+                            echo 'Running TFSec Security Scan...'
+                            sh '''
+                                echo "=== TFSec Security Scan Results ==="
+                                set +e
+                                tfsec . --format text --out tfsec-results.txt
+                                EXIT_CODE=$?
+                                set -e
+                                
+                                echo "=== Scan Results ==="
+                                cat tfsec-results.txt
+                                
+                                if [ $EXIT_CODE -eq 0 ]; then
+                                    echo "TFSec scan passed - no security issues found"
+                                elif [ $EXIT_CODE -eq 1 ]; then
+                                    echo "TFSec found security issues - check report above"
+                                else
+                                    echo "TFSec scan failed with exit code: $EXIT_CODE"
+                                fi
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Terraform Init & Validate') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'awscredentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    dir('devops-challenge/terraform') {
+                        script {
+                            echo 'Initializing Terraform...'
+                            sh 'terraform init -input=false -reconfigure'
+                            
+                            echo 'Validating Terraform configuration...'
+                            sh 'terraform validate'
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'awscredentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    dir('devops-challenge/terraform') {
+                        script {
+                            echo 'Generating Terraform plan...'
+                            sh 'terraform plan -var-file="environments/staging/staging.tfvars" -out=tfplan -input=false'
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Manual Approval') {
+            steps {
+                script {
+                    echo 'Waiting for manual approval...'
+                    input message: 'Proceed with Terraform apply?', ok: 'Yes'
+                }
+            }
+        }
+        
+        stage('Terraform Apply') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'awscredentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    dir('devops-challenge/terraform') {
+                        script {
+                            echo 'Applying Terraform configuration...'
+                            sh 'terraform apply -auto-approve -input=false tfplan'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                echo 'Pipeline execution completed!'
+                archiveArtifacts artifacts: 'devops-challenge/terraform/tfsec-results.txt', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'devops-challenge/terraform/tfplan', allowEmptyArchive: true
+            }
+        }
+        success {
+            script {
+                echo 'Pipeline executed successfully!'
+            }
+        }
+        failure {
+            script {
+                echo 'Pipeline execution failed!'
+            }
+        }
+    }
+}
