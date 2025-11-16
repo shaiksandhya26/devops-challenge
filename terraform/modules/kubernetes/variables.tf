@@ -1,34 +1,54 @@
-output "cluster_id" {
-  description = "EKS cluster ID"
-  value       = aws_eks_cluster.main.id
+variable "cluster_name" {
+  description = "Name of the EKS cluster"
+  type        = string
 }
 
-output "cluster_arn" {
-  description = "EKS cluster ARN"
-  value       = aws_eks_cluster.main.arn
+variable "cluster_version" {
+  description = "Kubernetes version"
+  type        = string
 }
 
-output "cluster_endpoint" {
-  description = "EKS cluster endpoint"
-  value       = aws_eks_cluster.main.endpoint
+variable "vpc_id" {
+  description = "VPC ID"
+  type        = string
 }
 
-output "cluster_certificate_authority_data" {
-  description = "EKS cluster certificate authority data"
-  value       = aws_eks_cluster.main.certificate_authority[0].data
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs"
+  type        = list(string)
 }
 
-output "cluster_security_group_id" {
-  description = "Security group ID attached to the EKS cluster"
-  value       = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+variable "public_subnet_ids" {
+  description = "List of public subnet IDs"
+  type        = list(string)
 }
 
-output "node_group_id" {
-  description = "EKS node group ID"
-  value       = aws_eks_node_group.main.id
+variable "cluster_role_arn" {
+  description = "ARN of the EKS cluster role"
+  type        = string
 }
 
-output "node_group_arn" {
-  description = "EKS node group ARN"
-  value       = aws_eks_node_group.main.arn
+variable "node_group_role_arn" {
+  description = "ARN of the node group role"
+  type        = string
+}
+
+variable "node_group_instance_types" {
+  description = "List of instance types for node group"
+  type        = list(string)
+}
+
+variable "desired_size" {
+  description = "Desired number of worker nodes"
+  type        = number
+}
+
+variable "max_size" {
+  description = "Maximum number of worker nodes"
+  type        = number
+}
+
+variable "min_size" {
+  description = "Minimum number of worker nodes"
+  type        = number
 }
