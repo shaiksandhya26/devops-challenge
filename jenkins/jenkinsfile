@@ -4,7 +4,7 @@ pipeline {
     agent any
     
     environment {
-        AWS_REGION = 'ap-south-1'
+        AWS_REGION = 'us-east-1'
     }
     
     stages {
@@ -40,9 +40,9 @@ pipeline {
                     echo 'Checking out source code...'
                     sh '''
                         if [ ! -d "task-jenkins" ]; then
-                            git clone https://github.com/Venky913381/task-jenkins.git
+                            git clone https://github.com/shaiksandhya26/devops-challenge.git
                         else
-                            cd task-jenkins && git pull origin master
+                            cd devops-challenge && git pull origin develop
                         fi
                     '''
                 }
