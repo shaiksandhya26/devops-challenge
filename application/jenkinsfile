@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        AWS_REGION = 'ap-south-1'
+        AWS_REGION = 'us-east-1'
     }
     
     stages {
@@ -38,9 +38,9 @@ pipeline {
                     echo 'Checking out source code...'
                     sh '''
                         if [ ! -d "task-jenkins" ]; then
-                            git clone https://github.com/Venky913381/task-jenkins.git
+                            git clone https://github.com/shaiksandhya26/devops-challenge.git
                         else
-                            cd task-jenkins && git pull origin master
+                            cd devops-challenge && git pull origin develop
                         fi
                     '''
                 }
@@ -200,7 +200,7 @@ pipeline {
         AWS_REGION = 'us-east-1'
         ECR_REPOSITORY = 'task-cluster'
         CLUSTER_NAME = 'task-cluster'
-        K8S_DIR = 'terraform_task/EKS'
+        K8S_DIR = 'application/manifests' 
     }
     
     stages {
@@ -237,9 +237,8 @@ pipeline {
                             exit 1
                         else
                             echo "Code directory found"
-                            ls -la terraform_task/
                             echo "K8s files in EKS directory:"
-                            ls -la ${K8S_DIR}/
+                            ls -la application/manifests/
                         fi
                     '''
                 }
